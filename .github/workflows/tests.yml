@@ -52,12 +52,12 @@ jobs:
           name: bottles
           path: '*.bottle.*'
 
-  # add `pr-pull` label after `test-bot` job completed, if:
+  # Pull bottles, and push commits after `test-bot` job completes, if:
   # - triggered by pull_request
   # - pull_request is not a draft
   # - pull_request is not from a fork (implies write permission)
   # - pull_request contains `AUTO_MERGE` line in the PR body
-  label-auto-merge:
+  auto-merge:
     needs: test-bot
     if: |
       github.event_name == 'pull_request' &&
@@ -74,43 +74,49 @@ jobs:
           regex: '^AUTO_MERGE$'
           flags: 'm'
 
-      - name: Label PR
-        uses: actions-ecosystem/action-add-labels@v1
-        if: ${{ steps.regex-match.outputs.match != '' }}
-        with:
-          github_token: ${{ secrets.WORKFLOW_TOKEN }}
-          labels: pr-pull
-
-  auto-merge:
-    needs: label-auto-merge
-    if: |
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'pr-pull')
-    runs-on: ubuntu-latest
-    steps:
+      # Flow below duplicated from `publish.yml` with additional conditions,
+      # and an additional checkout of base of the pull request.
+      #
+      # `brew pr-pull` expects to be run in the context of the base of the pull
+      # request, instead of the pull request itself. Since a workflow triggered
+      # by a `pull_request` is usually run in the context of the pull request,
+      # the base needs to be explicitly checked out. The full depth is needed
+      # since `brew pr-pull` uses the diffs with the base to determine which
+      # Homebrew formulae have changed and need bottles to be downloaded.
 
       - name: Set up Homebrew
+        if: ${{ steps.regex-match.outputs.match != '' }}
         uses: Homebrew/actions/setup-homebrew@master
 
       - name: Set up git
+        if: ${{ steps.regex-match.outputs.match != '' }}
         uses: Homebrew/actions/git-user-config@master
 
+      - name: Check out pull request base
+        if: ${{ steps.regex-match.outputs.match != '' }}
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.base_ref }}
+          fetch-depth: 0
+
       - name: Pull bottles
+        if: ${{ steps.regex-match.outputs.match != '' }}
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           PULL_REQUEST: ${{ github.event.pull_request.number }}
         run: brew pr-pull --debug --tap=$GITHUB_REPOSITORY $PULL_REQUEST
 
       - name: Push commits
+        if: ${{ steps.regex-match.outputs.match != '' }}
         uses: Homebrew/actions/git-try-push@master
         with:
           token: ${{ github.token }}
           branch: main
 
       - name: Delete branch
-        if: github.event.pull_request.head.repo.full_name == github.repository
+        if: |
+          steps.regex-match.outputs.match != '' &&
+          github.event.pull_request.head.repo.full_name == github.repository
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: git push --delete origin $BRANCH
