@@ -52,12 +52,12 @@ jobs:
           name: bottles
           path: '*.bottle.*'
 
-  # add `pr-pull` label after `test-bot` job completed, if:
+  # Pull bottles, and push commits after `test-bot` job completes, if:
   # - triggered by pull_request
   # - pull_request is not a draft
   # - pull_request is not from a fork (implies write permission)
   # - pull_request contains `AUTO_MERGE` line in the PR body
-  label-auto-merge:
+  auto-merge:
     needs: test-bot
     if: |
       github.event_name == 'pull_request' &&
@@ -74,43 +74,33 @@ jobs:
           regex: '^AUTO_MERGE$'
           flags: 'm'
 
-      - name: Label PR
-        uses: actions-ecosystem/action-add-labels@v1
-        if: ${{ steps.regex-match.outputs.match != '' }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          labels: pr-pull
-
-  auto-merge:
-    needs: label-auto-merge
-    if: |
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      contains(github.event.pull_request.labels.*.name, 'pr-pull')
-    runs-on: ubuntu-latest
-    steps:
-
+      # Flow below duplicated from `publish.yml` with additional conditions
       - name: Set up Homebrew
+        if: ${{ steps.regex-match.outputs.match != '' }}
         uses: Homebrew/actions/setup-homebrew@master
 
       - name: Set up git
+        if: ${{ steps.regex-match.outputs.match != '' }}
         uses: Homebrew/actions/git-user-config@master
 
       - name: Pull bottles
+        if: ${{ steps.regex-match.outputs.match != '' }}
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           PULL_REQUEST: ${{ github.event.pull_request.number }}
         run: brew pr-pull --debug --tap=$GITHUB_REPOSITORY $PULL_REQUEST
 
       - name: Push commits
+        if: ${{ steps.regex-match.outputs.match != '' }}
         uses: Homebrew/actions/git-try-push@master
         with:
           token: ${{ github.token }}
           branch: main
 
       - name: Delete branch
-        if: github.event.pull_request.head.repo.full_name == github.repository
+        if: |
+          steps.regex-match.outputs.match != '' &&
+          github.event.pull_request.head.repo.full_name == github.repository
         env:
           BRANCH: ${{ github.event.pull_request.head.ref }}
         run: git push --delete origin $BRANCH
