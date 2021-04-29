@@ -83,12 +83,18 @@ jobs:
         if: ${{ steps.regex-match.outputs.match != '' }}
         uses: Homebrew/actions/git-user-config@master
 
+      - name: Check out main branch
+        if: ${{ steps.regex-match.outputs.match != '' }}
+        uses: actions/checkout@v2
+        with:
+          ref: 'main'
+
       - name: Pull bottles
         if: ${{ steps.regex-match.outputs.match != '' }}
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           PULL_REQUEST: ${{ github.event.pull_request.number }}
-        run: brew pr-pull --debug --no-commit --tap=$GITHUB_REPOSITORY $PULL_REQUEST
+        run: brew pr-pull --debug --tap=$GITHUB_REPOSITORY $PULL_REQUEST
 
       - name: Push commits
         if: ${{ steps.regex-match.outputs.match != '' }}
