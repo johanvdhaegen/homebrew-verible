@@ -99,6 +99,18 @@ jobs:
           ref: ${{ github.base_ref }}
           fetch-depth: 0
 
+      - name: Debug environment
+        if: ${{ steps.regex-match.outputs.match != '' }}
+        run: |
+          git log -3 HEAD
+          echo "GITHUB_SHA: $GITHUB_SHA"
+          echo "> git log -3 \$GITHUB_SHA"
+          git log -3 $GITHUB_SHA
+          echo "> git log HEAD...\$GITHUB_SHA"
+          git log HEAD...$GITHUB_SHA
+          echo "> git diff-tree -r --name-only --diff-filter=AM \$GITHUB_SHA HEAD -- Formula"
+          git diff-tree -r --name-only --diff-filter=AM $GITHUB_SHA HEAD -- Formula
+
       - name: Pull bottles
         if: ${{ steps.regex-match.outputs.match != '' }}
         env:
