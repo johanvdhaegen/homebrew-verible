@@ -86,7 +86,7 @@ jobs:
 
       - name: Set up Homebrew
         if: ${{ steps.regex-match.outputs.match != '' }}
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: johanvdhaegen/actions/setup-homebrew@master
 
       - name: Set up git
         if: ${{ steps.regex-match.outputs.match != '' }}
