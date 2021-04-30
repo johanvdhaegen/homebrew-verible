@@ -64,6 +64,8 @@ jobs:
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    env:
+      GITHUB_SHA: ${{ github.base_ref }}
     steps:
 
       - name: Check pull request for AUTO_MERGE line
@@ -93,6 +95,8 @@ jobs:
 
       - name: Set up Homebrew
         if: ${{ steps.regex-match.outputs.match != '' }}
+        env:
+          GITHUB_SHA: ${{ github.base_ref }}
         uses: johanvdhaegen/actions/setup-homebrew@master
 
       - name: Set up git
@@ -102,6 +106,7 @@ jobs:
       - name: Debug environment
         if: ${{ steps.regex-match.outputs.match != '' }}
         env:
+          GITHUB_SHA: ${{ github.base_ref }}
           TAP_PATH: /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/johanvdhaegen/homebrew-verible
         run: |
           git log -3 HEAD
@@ -122,6 +127,7 @@ jobs:
       - name: Pull bottles
         if: ${{ steps.regex-match.outputs.match != '' }}
         env:
+          GITHUB_SHA: ${{ github.base_ref }}
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           PULL_REQUEST: ${{ github.event.pull_request.number }}
         run: brew pr-pull --debug --tap=$GITHUB_REPOSITORY $PULL_REQUEST
