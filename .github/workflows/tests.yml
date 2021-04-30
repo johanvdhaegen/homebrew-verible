@@ -93,7 +93,7 @@ jobs:
 
       - name: Set up Homebrew
         if: ${{ steps.regex-match.outputs.match != '' }}
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: johanvdhaegen/actions/setup-homebrew@master
 
       - name: Set up git
         if: ${{ steps.regex-match.outputs.match != '' }}
@@ -101,6 +101,8 @@ jobs:
 
       - name: Debug environment
         if: ${{ steps.regex-match.outputs.match != '' }}
+        env:
+          TAP_PATH: /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/johanvdhaegen/homebrew-verible
         run: |
           git log -3 HEAD
           echo "GITHUB_SHA: $GITHUB_SHA"
@@ -110,6 +112,12 @@ jobs:
           git log HEAD...$GITHUB_SHA
           echo "> git diff-tree -r --name-only --diff-filter=AM \$GITHUB_SHA HEAD -- Formula"
           git diff-tree -r --name-only --diff-filter=AM $GITHUB_SHA HEAD -- Formula
+          echo "> git -C \$TAP_PATH log -3 HEAD"
+          git -C $TAP_PATH log -3 HEAD
+          echo "> git -C \$TAP_PATH log HEAD...\$GITHUB_SHA"
+          git -C $TAP_PATH log HEAD...$GITHUB_SHA
+          echo "> git -C \$PATH_PATH diff-tree"
+          git -C $TAP_PATH diff-tree -r --name-only --diff-filter=AM $GITHUB_SHA HEAD -- Formula
 
       - name: Pull bottles
         if: ${{ steps.regex-match.outputs.match != '' }}
