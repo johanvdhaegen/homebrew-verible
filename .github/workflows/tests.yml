@@ -84,6 +84,13 @@ jobs:
       # since `brew pr-pull` uses the diffs with the base to determine which
       # Homebrew formulae have changed and need bottles to be downloaded.
 
+      - name: Check out pull request base
+        if: ${{ steps.regex-match.outputs.match != '' }}
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.base_ref }}
+          fetch-depth: 0
+
       - name: Set up Homebrew
         if: ${{ steps.regex-match.outputs.match != '' }}
         uses: Homebrew/actions/setup-homebrew@master
@@ -91,13 +98,6 @@ jobs:
       - name: Set up git
         if: ${{ steps.regex-match.outputs.match != '' }}
         uses: Homebrew/actions/git-user-config@master
-
-      - name: Check out pull request base
-        if: ${{ steps.regex-match.outputs.match != '' }}
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.base_ref }}
-          fetch-depth: 0
 
       - name: Pull bottles
         if: ${{ steps.regex-match.outputs.match != '' }}
