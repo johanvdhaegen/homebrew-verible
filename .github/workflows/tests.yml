@@ -104,7 +104,12 @@ jobs:
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
           PULL_REQUEST: ${{ github.event.pull_request.number }}
-        run: brew pr-pull --debug --tap=$GITHUB_REPOSITORY $PULL_REQUEST
+          PULL_REQUEST_TARGET_SHA: ${{ github.event.pull_request.base.sha }}
+          PULL_REQUEST_TARGET_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          GITHUB_SHA=$PULL_REQUEST_TARGET_SHA \
+          GITHUB_REF=$PULL_REQUEST_TARGET_REF \
+          brew pr-pull --debug --tap=$GITHUB_REPOSITORY $PULL_REQUEST
 
       - name: Push commits
         if: ${{ steps.regex-match.outputs.match != '' }}
